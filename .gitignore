@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+
+# Streamlit
+.streamlit/
+
+# Local models (VERY IMPORTANT)
+model/
+models/
+*.gguf
+*.bin
+*.pt
+
+# Environment file
+.env
+
+# OS / Editor junk
+.vscode/
+.DS_Store
+
+
