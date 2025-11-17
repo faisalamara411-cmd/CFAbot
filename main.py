@@ -7,11 +7,20 @@ from sklearn.metrics.pairwise import cosine_similarity
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, pipeline
 import numpy as np
 
+# ----------------------- Streamlit page config -----------------------
 st.set_page_config(page_title="CFA Chatbot")
 
-st.title("CFA Chatbot")
+# ----------------------- Header with Logo -----------------------
+col1, col2 = st.columns([1, 5])
 
-# --------- Load JSONL corpus ---------
+with col1:
+    # Replace with your logo path
+    st.image("logo.png", width=80)
+
+with col2:
+    st.markdown("<h1 style='margin-top: 20px;'>CFA Chatbot</h1>", unsafe_allow_html=True)
+
+# ----------------------- Load JSONL corpus -----------------------
 CORPUS_PATH = os.path.join(os.path.dirname(__file__), "train.jsonl")
 
 docs = []
@@ -27,34 +36,48 @@ with st.spinner("Loading documents..."):
             except json.JSONDecodeError:
                 continue
 
-# --------- Compute embeddings ---------
-with st.spinner("Loading embeddings model and computing embeddings..."):
-    embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-    doc_embeddings = embedding_model.encode(docs, convert_to_numpy=True)
+# ----------------------- Compute embeddings -----------------------
+@st.cache_data
+def compute_embeddings(docs):
+    model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+    return model.encode(docs, convert_to_numpy=True), model
 
-# --------- Load local LLM for summarization/answering ---------
-with st.spinner("Loading LLM model..."):
+with st.spinner("Computing embeddings..."):
+    doc_embeddings, embedding_model = compute_embeddings(docs)
+
+# ----------------------- Load LLM -----------------------
+@st.cache_resource
+def load_llm():
     tokenizer = AutoTokenizer.from_pretrained("t5-small")
     model = AutoModelForSeq2SeqLM.from_pretrained("t5-small")
-    llm_pipeline = pipeline("text2text-generation", model=model, tokenizer=tokenizer)
+    pipe = pipeline("text2text-generation", model=model, tokenizer=tokenizer)
+    return pipe
+
+with st.spinner("Loading LLM model..."):
+    llm_pipeline = load_llm()
 
 st.success("CFA Chatbot is ready! Ask me anything about CFA or CIPM programs.")
 
-# --------- Helper functions ---------
-def get_top_docs(query, top_k=3):
+# ----------------------- Helper functions -----------------------
+def get_top_docs(query, top_k=5):
     query_emb = embedding_model.encode([query], convert_to_numpy=True)
     similarities = cosine_similarity(query_emb, doc_embeddings)[0]
     top_indices = similarities.argsort()[-top_k:][::-1]
     return [docs[i] for i in top_indices]
 
-def generate_answer(query):
-    top_docs = get_top_docs(query)
+def generate_answer(query, top_k=5):
+    top_docs = get_top_docs(query, top_k=top_k)
     context = " ".join(top_docs)
-    prompt = f"Use the following context to answer the question.\nContext: {context}\nQuestion: {query}\nAnswer:"
+    prompt = (
+        "You are a CFA exam expert. "
+        "Answer the following question based ONLY on the context provided. "
+        "If the answer is not in the context, say 'I don't know'.\n\n"
+        f"Context:\n{context}\n\nQuestion: {query}\nAnswer:"
+    )
     output = llm_pipeline(prompt, max_length=256, do_sample=False)
-    return output[0]['generated_text']
+    return output[0]["generated_text"].strip()
 
-# --------- Streamlit chat interface ---------
+# ----------------------- Streamlit chat interface -----------------------
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant", "content": "Hello! Ask me anything about CFA or CIPM programs."}
@@ -73,4 +96,3 @@ if user_input := st.chat_input("Type a message"):
         full_response = generate_answer(user_input)
         response_placeholder.write(full_response)
         st.session_state.messages.append({"role": "assistant", "content": full_response})
-
