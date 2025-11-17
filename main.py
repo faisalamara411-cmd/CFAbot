@@ -10,15 +10,8 @@ import numpy as np
 # ----------------------- Streamlit page config -----------------------
 st.set_page_config(page_title="CFA Chatbot")
 
-# ----------------------- Header with Logo -----------------------
-col1, col2 = st.columns([1, 5])
-
-with col1:
-    # Replace with your logo path
-    st.image("logo.png", width=80)
-
-with col2:
-    st.markdown("<h1 style='margin-top: 20px;'>CFA Chatbot</h1>", unsafe_allow_html=True)
+# ----------------------- Title -----------------------
+st.title("CFA Chatbot")
 
 # ----------------------- Load JSONL corpus -----------------------
 CORPUS_PATH = os.path.join(os.path.dirname(__file__), "train.jsonl")
