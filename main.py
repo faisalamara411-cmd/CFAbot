@@ -8,7 +8,7 @@ from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, pipeline
 import numpy as np
 
 st.set_page_config(page_title="CFA Chatbot")
-st.image("logo.png", width=100)
+
 st.title("CFA Chatbot")
 
 # --------- Load JSONL corpus ---------
