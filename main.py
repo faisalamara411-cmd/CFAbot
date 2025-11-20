@@ -7,13 +7,13 @@ from sklearn.metrics.pairwise import cosine_similarity
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, pipeline
 import numpy as np
 
-# ----------------------- Streamlit page config -----------------------
+# Streamlit page config 
 st.set_page_config(page_title="CFA Chatbot")
 
-# ----------------------- Title -----------------------
+
 st.title("CFA Chatbot")
 
-# ----------------------- Load JSONL corpus -----------------------
+# Load JSONL corpus
 CORPUS_PATH = os.path.join(os.path.dirname(__file__), "train.jsonl")
 
 # Function to split long documents into chunks
@@ -37,7 +37,7 @@ with st.spinner("Loading documents and splitting into chunks..."):
 
 #st.write(f"Loaded {len(docs)} document chunks.")
 
-# ----------------------- Compute embeddings -----------------------
+# Compute embeddings
 @st.cache_data
 def compute_embeddings(docs):
     model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
@@ -47,7 +47,7 @@ def compute_embeddings(docs):
 with st.spinner("Computing embeddings..."):
     doc_embeddings, embedding_model = compute_embeddings(docs)
 
-# ----------------------- Load instruction-tuned LLM -----------------------
+# Load instruction-tuned LLM 
 @st.cache_resource
 def load_llm():
     tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-base")
@@ -60,7 +60,7 @@ with st.spinner("Loading LLM model..."):
 
 st.success("CFA Chatbot is ready! Ask me anything about CFA or CIPM programs.")
 
-# ----------------------- Helper functions -----------------------
+# Helper functions 
 def get_top_docs(query, top_k=5):
     """Retrieve the top_k most relevant documents based on cosine similarity."""
     query_emb = embedding_model.encode([query], convert_to_numpy=True)
@@ -88,7 +88,7 @@ def generate_answer(query, top_k=5):
     answer = output[0]["generated_text"].strip()
     return answer
 
-# ----------------------- Streamlit chat interface -----------------------
+# Streamlit chat interface 
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant", "content": "Hello! Ask me anything about CFA or CIPM programs."}
